@@ -1,0 +1,39 @@
+{
+  "name": "real-estate-staff-work-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "powershell -ExecutionPolicy Bypass -Command \"$env:DATABASE_URL=(Get-Content .env.local | Select-String '^DATABASE_URL=').ToString().Substring(13); npx prisma db push\"",
+    "make-admin": "node scripts/make-admin.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.0.0",
+    "@prisma/client": "^6.0.0",
+    "clsx": "^2.1.1",
+    "next": "^14.2.5",
+    "next-pwa": "^5.6.0",
+    "next-themes": "^0.3.0",
+    "prisma": "^6.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.6.3"
+  }
+}
+

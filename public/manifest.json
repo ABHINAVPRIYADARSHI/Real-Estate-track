@@ -1,0 +1,12 @@
+{
+  "name": "Real Estate Work Tracker",
+  "short_name": "Work Tracker",
+  "description": "Internal staff work tracker",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a0a0a",
+  "icons": []
+}
+

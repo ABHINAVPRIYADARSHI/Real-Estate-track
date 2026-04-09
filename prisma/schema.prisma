@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  Admin
+  Manager
+  Salesman
+}
+
+enum UserStatus {
+  Pending
+  Active
+  Suspended
+}
+
+enum VisitStatus {
+  Scheduled
+  Completed
+  Converted
+  Cancelled
+}
+
+model User {
+  id           String    @id @default(cuid())
+  clerkUserId String    @unique
+  displayName String?
+
+  // Role is assigned only after Admin approval.
+  role   Role?
+  status UserStatus @default(Pending)
+
+  // One-to-many: Manager -> Salesmen
+  managerId String?
+  manager   User?     @relation("ManagerSalesmen", fields: [managerId], references: [id], onDelete: SetNull)
+  salesmen  User[]    @relation("ManagerSalesmen")
+
+  customersOwned Customer[] @relation("CustomerOwner")
+  visitsAssigned Visit[]    @relation("VisitAssignedSalesman")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role, status])
+  @@index([managerId])
+}
+
+model Customer {
+  id String @id @default(cuid())
+
+  ownerUserId  String
+  owner        User   @relation("CustomerOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  // Unique Leads: Mobile number must be unique in the system.
+  mobileNumber String @unique
+  name          String
+
+  // Optional: denormalize owner name for faster UX without extra joins.
+  // Keep in sync in the application layer.
+  ownerName String?
+
+  visits Visit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerUserId])
+}
+
+model Visit {
+  id String @id @default(cuid())
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  projectName String
+
+  // When the visit happens.
+  dateTime DateTime
+  status    VisitStatus
+
+  // Delegation: Admins/Managers can assign a visit to any salesman.
+  assignedSalesmanId String
+  assignedSalesman   User   @relation("VisitAssignedSalesman", fields: [assignedSalesmanId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedSalesmanId, dateTime])
+  @@index([customerId, dateTime])
+}
+
