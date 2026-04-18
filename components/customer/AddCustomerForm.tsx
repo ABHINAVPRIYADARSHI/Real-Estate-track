@@ -27,10 +27,7 @@ export default function AddCustomerForm({ role }: { role: Role }) {
 
     startTransition(async () => {
       try {
-        await addCustomerAction({
-          name: name.trim(),
-          mobileNumber: mobileNumber.trim(),
-        });
+        await addCustomerAction({ name: name.trim(), mobileNumber: mobileNumber.trim() });
         setName("");
         setMobileNumber("");
         setSuccess("Customer added successfully.");
@@ -43,53 +40,47 @@ export default function AddCustomerForm({ role }: { role: Role }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <h1 className="text-lg font-semibold">Add Customer</h1>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+      <div className="card p-4">
+        <h1 className="text-lg font-semibold text-brand-tertiary dark:text-white">Add Customer</h1>
+        <p className="mt-1 text-sm text-brand-neutral">
           Add a new lead with just name and mobile number.
         </p>
       </div>
 
-      {error ? (
+      {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
           {error}
         </div>
-      ) : null}
+      )}
 
-      {success ? (
+      {success && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200">
           {success}
         </div>
-      ) : null}
+      )}
 
-      <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <label className="text-sm font-medium">Customer Name</label>
+      <div className="space-y-2 card p-4">
+        <label className="text-sm font-medium text-brand-tertiary dark:text-white">Customer Name</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Rahul Sharma"
-          className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+          className="input"
         />
       </div>
 
-      <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <label className="text-sm font-medium">Mobile Number</label>
+      <div className="space-y-2 card p-4">
+        <label className="text-sm font-medium text-brand-tertiary dark:text-white">Mobile Number</label>
         <input
           value={mobileNumber}
           onChange={(e) => setMobileNumber(e.target.value)}
           placeholder="e.g. 9876543210"
-          className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+          className="input"
         />
-        <div className="text-xs text-neutral-600 dark:text-neutral-300">
-          {ownerHint}
-        </div>
+        <div className="text-xs text-brand-neutral">{ownerHint}</div>
       </div>
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-md bg-neutral-900 px-3 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-neutral-50 dark:text-neutral-900"
-      >
+      <button type="submit" disabled={busy} className="btn-primary w-full">
         {busy ? "Saving..." : "Add Customer"}
       </button>
     </form>

@@ -2,14 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Simple baseline for a mobile-first internal app. */
+/* ── Aquamarine Ledger design tokens ───────────────────────────────────────── */
+:root {
+  --primary:   #2D9DA0;
+  --secondary: #00484A;
+  --tertiary:  #0F2833;
+  --neutral:   #737878;
+  --surface:   #f0f9f9;
+}
+
 html,
 body {
   height: 100%;
 }
 
 body {
-  @apply bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-50;
+  /* Light: whisper-teal canvas. Dark: deep navy. */
+  @apply bg-brand-surface text-brand-tertiary antialiased
+         dark:bg-brand-dark-bg dark:text-slate-100;
+}
+
+/* ── Reusable component classes ─────────────────────────────────────────────── */
+@layer components {
+
+  /* Primary filled button */
+  .btn-primary {
+    @apply rounded-md bg-brand-primary px-3 py-3 text-sm font-medium text-white
+           transition-colors hover:bg-brand-secondary
+           disabled:opacity-50;
+  }
+
+  /* Outline / ghost button */
+  .btn-outline {
+    @apply rounded-md border border-brand-primary/40 px-3 py-2 text-sm font-medium
+           text-brand-tertiary transition-colors hover:bg-brand-primary/10
+           dark:border-brand-primary/30 dark:text-brand-primary dark:hover:bg-brand-primary/15;
+  }
+
+  /* Card container */
+  .card {
+    @apply rounded-xl border border-brand-primary/25 bg-white
+           dark:border-brand-primary/20 dark:bg-brand-tertiary;
+  }
+
+  /* Text input / select */
+  .input {
+    @apply w-full rounded-md border border-brand-primary/30 bg-white px-3 py-2
+           text-sm outline-none transition-colors
+           focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/30
+           dark:border-brand-primary/25 dark:bg-[#0a1e2a] dark:focus:border-brand-primary;
+  }
+
+  /* Muted label text */
+  .text-muted {
+    @apply text-brand-neutral dark:text-brand-neutral;
+  }
 }
 
 @keyframes slideUp {
@@ -22,4 +69,3 @@ body {
     opacity: 1;
   }
 }
-

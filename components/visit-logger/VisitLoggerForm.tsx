@@ -41,12 +41,8 @@ export default function VisitLoggerForm(props: {
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
-  const [status, setStatus] = useState<VisitStatus>(
-    props.initialStatus ?? "Scheduled"
-  );
-  const [assignedSalesmanId, setAssignedSalesmanId] = useState(
-    props.salesmen[0]?.id ?? ""
-  );
+  const [status, setStatus] = useState<VisitStatus>(props.initialStatus ?? "Scheduled");
+  const [assignedSalesmanId, setAssignedSalesmanId] = useState(props.salesmen[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
 
   async function onSearch() {
@@ -68,15 +64,8 @@ export default function VisitLoggerForm(props: {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (!selectedCustomerId) {
-      setError("Select a customer from the search results.");
-      return;
-    }
-    if (!selectedProjectId) {
-      setError("Please select a project.");
-      return;
-    }
+    if (!selectedCustomerId) { setError("Select a customer from the search results."); return; }
+    if (!selectedProjectId) { setError("Please select a project."); return; }
 
     startTransition(async () => {
       try {
@@ -85,12 +74,9 @@ export default function VisitLoggerForm(props: {
           projectId: selectedProjectId,
           dateTime: new Date(dateTimeLocal).toISOString(),
           status,
-          assignedSalesmanId:
-            props.role === "Salesman" ? undefined : assignedSalesmanId,
+          assignedSalesmanId: props.role === "Salesman" ? undefined : assignedSalesmanId,
         });
         router.refresh();
-
-        // Keep customer selection for fast consecutive logging.
         setSelectedProjectId("");
         setStatus("Scheduled");
       } catch (e: any) {
@@ -100,83 +86,83 @@ export default function VisitLoggerForm(props: {
   }
 
   const canDelegate = props.role === "Manager" || props.role === "Admin";
+  const labelClass = "text-sm font-medium text-brand-tertiary dark:text-white";
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <h1 className="text-lg font-semibold">Visit Logger</h1>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+      {/* Header card */}
+      <div className="card p-4">
+        <h1 className="text-lg font-semibold text-brand-tertiary dark:text-white">Visit Logger</h1>
+        <p className="mt-1 text-sm text-brand-neutral">
           Log or schedule a visit. Delegation is available for Managers/Admins.
         </p>
       </div>
 
-      {error ? (
+      {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
           {error}
         </div>
-      ) : null}
+      )}
 
       {/* Customer search */}
-      <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-        <label className="text-sm font-medium">Customer (Search by Mobile/Name)</label>
+      <div className="space-y-2 card p-4">
+        <label className={labelClass}>Customer (Search by Mobile/Name)</label>
         <div className="flex gap-2">
           <input
             value={query}
             onChange={(ev) => setQuery(ev.target.value)}
             onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); onSearch(); } }}
             placeholder="e.g. 5551234 or John"
-            className="flex-1 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+            className="input flex-1"
           />
           <button
             type="button"
             disabled={searching || query.trim().length === 0}
             onClick={onSearch}
-            className="rounded-md bg-neutral-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50 dark:bg-neutral-50 dark:text-neutral-900"
+            className="rounded-md bg-brand-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-brand-secondary disabled:opacity-50"
           >
             {searching ? "Searching..." : "Search"}
           </button>
         </div>
 
-        {results.length > 0 ? (
-          <div className="max-h-44 overflow-auto rounded-md border border-neutral-200 dark:border-neutral-800">
+        {results.length > 0 && (
+          <div className="max-h-44 overflow-auto rounded-md border border-brand-primary/25 dark:border-brand-primary/20">
             {results.map((r) => (
               <button
                 key={r.id}
                 type="button"
                 onClick={() => setSelectedCustomerId(r.id)}
                 className={
-                  "w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900/50 " +
-                  (selectedCustomerId === r.id ? "bg-neutral-100 dark:bg-neutral-900/70" : "")
+                  "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-brand-primary/10 " +
+                  (selectedCustomerId === r.id ? "bg-brand-primary/15" : "")
                 }
               >
-                <div className="font-medium">{r.name}</div>
-                <div className="mt-0.5 text-xs text-neutral-600 dark:text-neutral-300">
+                <div className="font-medium text-brand-tertiary dark:text-white">{r.name}</div>
+                <div className="mt-0.5 text-xs text-brand-neutral">
                   {r.mobileNumber}
                   {r.ownerName ? ` • Owner: ${r.ownerName}` : ""}
                 </div>
               </button>
             ))}
           </div>
-        ) : null}
+        )}
 
         {selectedCustomer ? (
-          <div className="text-xs text-neutral-600 dark:text-neutral-300">
-            Selected: <span className="font-medium">{selectedCustomer.name}</span>{" "}
+          <div className="text-xs text-brand-neutral">
+            Selected: <span className="font-medium text-brand-secondary dark:text-brand-primary">{selectedCustomer.name}</span>{" "}
             ({selectedCustomer.mobileNumber})
           </div>
         ) : selectedCustomerId ? (
-          <div className="text-xs text-neutral-600 dark:text-neutral-300">Selected customer.</div>
+          <div className="text-xs text-brand-neutral">Selected customer.</div>
         ) : (
-          <div className="text-xs text-neutral-600 dark:text-neutral-300">
-            Select a result to enable logging.
-          </div>
+          <div className="text-xs text-brand-neutral">Select a result to enable logging.</div>
         )}
       </div>
 
       <div className="grid grid-cols-1 gap-3">
         {/* Project selector */}
-        <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <label className="text-sm font-medium">
+        <div className="space-y-2 card p-4">
+          <label className={labelClass}>
             Project <span className="text-red-500">*</span>
           </label>
           {props.projects.length === 0 ? (
@@ -187,20 +173,18 @@ export default function VisitLoggerForm(props: {
             <select
               value={selectedProjectId}
               onChange={(ev) => setSelectedProjectId(ev.target.value)}
-              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+              className="input"
             >
               <option value="">— Select a project —</option>
               {props.projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           )}
 
           {/* Project detail card */}
           {selectedProject && (
-            <div className="rounded-md bg-neutral-50 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400 space-y-0.5">
+            <div className="rounded-md bg-brand-primary/10 px-3 py-2 text-xs text-brand-secondary dark:bg-brand-primary/15 dark:text-brand-primary space-y-0.5">
               <div className="flex items-center gap-1">
                 <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -223,24 +207,20 @@ export default function VisitLoggerForm(props: {
         </div>
 
         {/* Date / time */}
-        <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <label className="text-sm font-medium">Date/Time</label>
+        <div className="space-y-2 card p-4">
+          <label className={labelClass}>Date/Time</label>
           <input
             type="datetime-local"
             value={dateTimeLocal}
             onChange={(ev) => setDateTimeLocal(ev.target.value)}
-            className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+            className="input"
           />
         </div>
 
         {/* Visit status */}
-        <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-          <label className="text-sm font-medium">Visit Status</label>
-          <select
-            value={status}
-            onChange={(ev) => setStatus(ev.target.value as VisitStatus)}
-            className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
-          >
+        <div className="space-y-2 card p-4">
+          <label className={labelClass}>Visit Status</label>
+          <select value={status} onChange={(ev) => setStatus(ev.target.value as VisitStatus)} className="input">
             <option value="Scheduled">Scheduled</option>
             <option value="Completed">Completed</option>
             <option value="Converted">Converted</option>
@@ -248,37 +228,29 @@ export default function VisitLoggerForm(props: {
           </select>
         </div>
 
-        {/* Salesman delegation (Manager/Admin) */}
-        {canDelegate ? (
-          <div className="space-y-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-            <label className="text-sm font-medium">Assign to Salesman</label>
+        {/* Salesman delegation */}
+        {canDelegate && (
+          <div className="space-y-2 card p-4">
+            <label className={labelClass}>Assign to Salesman</label>
             <select
               value={assignedSalesmanId}
               onChange={(ev) => setAssignedSalesmanId(ev.target.value)}
-              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none dark:border-neutral-800 dark:bg-neutral-950"
+              className="input"
             >
               {props.salesmen.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.displayName ?? s.id}
-                </option>
+                <option key={s.id} value={s.id}>{s.displayName ?? s.id}</option>
               ))}
             </select>
-            <div className="text-xs text-neutral-600 dark:text-neutral-300">
+            <div className="text-xs text-brand-neutral">
               The assigned salesman will see customer details for this visit.
             </div>
           </div>
-        ) : null}
+        )}
       </div>
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={busy}
-          className="flex-1 rounded-md bg-neutral-900 px-3 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-neutral-50 dark:text-neutral-900"
-        >
-          {busy ? "Saving..." : "Log Visit"}
-        </button>
-      </div>
+      <button type="submit" disabled={busy} className="btn-primary w-full">
+        {busy ? "Saving..." : "Log Visit"}
+      </button>
     </form>
   );
 }

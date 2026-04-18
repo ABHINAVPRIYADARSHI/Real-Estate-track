@@ -40,34 +40,23 @@ function statusPill(status: VisitStatus) {
     case "Scheduled":
       return `${base} bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-200`;
     default:
-      return `${base} bg-neutral-50 text-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-200`;
+      return `${base} bg-brand-primary/10 text-brand-secondary dark:text-brand-primary`;
   }
 }
 
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
-
 function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function CustomerDetailClient({
-  customer,
-  visits,
-  salesmanOptions,
-  canReassign,
+  customer, visits, salesmanOptions, canReassign,
 }: CustomerDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Edit form state
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(customer.name);
   const [mobileNumber, setMobileNumber] = useState(customer.mobileNumber);
@@ -79,25 +68,19 @@ export default function CustomerDetailClient({
     setName(customer.name);
     setMobileNumber(customer.mobileNumber);
     setNewOwnerUserId(customer.ownerUserId);
-    setError(null);
-    setSuccess(null);
-    setEditing(false);
+    setError(null); setSuccess(null); setEditing(false);
   }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
+    setError(null); setSuccess(null);
     startTransition(async () => {
       try {
         await updateCustomerAction({
           customerId: customer.id,
           name: name.trim(),
           mobileNumber: mobileNumber.trim(),
-          ...(canReassign && newOwnerUserId !== customer.ownerUserId
-            ? { newOwnerUserId }
-            : {}),
+          ...(canReassign && newOwnerUserId !== customer.ownerUserId ? { newOwnerUserId } : {}),
         });
         setSuccess("Customer updated successfully.");
         setEditing(false);
@@ -108,18 +91,18 @@ export default function CustomerDetailClient({
     });
   }
 
+  const labelClass = "mb-1 block text-xs font-medium text-brand-neutral";
+
   return (
     <div className="space-y-4">
       {/* Customer info card */}
-      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+      <div className="card p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold">{customer.name}</h1>
-            <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-              {customer.mobileNumber}
-            </p>
+            <h1 className="text-lg font-semibold text-brand-tertiary dark:text-white">{customer.name}</h1>
+            <p className="mt-0.5 text-sm text-brand-neutral">{customer.mobileNumber}</p>
             {customer.ownerName && (
-              <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+              <p className="mt-0.5 text-xs text-brand-neutral">
                 Assigned to {customer.ownerName}
               </p>
             )}
@@ -127,15 +110,12 @@ export default function CustomerDetailClient({
           <button
             type="button"
             onClick={() => { setEditing(!editing); setError(null); setSuccess(null); }}
-            className="shrink-0 rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="btn-outline shrink-0 text-xs py-1.5"
           >
             {editing ? "Cancel" : "Edit"}
           </button>
         </div>
-
-        <div className="mt-2 text-xs text-neutral-400 dark:text-neutral-500">
-          Added {formatDate(customer.createdAt)}
-        </div>
+        <div className="mt-2 text-xs text-brand-neutral">Added {formatDate(customer.createdAt)}</div>
       </div>
 
       {/* Edit form */}
@@ -152,45 +132,25 @@ export default function CustomerDetailClient({
             </div>
           )}
 
-          <div className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+          <div className="space-y-3 card p-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                Customer Name
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:focus:border-neutral-600"
-              />
+              <label className={labelClass}>Customer Name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} required className="input" />
             </div>
-
             <div>
-              <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                Mobile Number
-              </label>
-              <input
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                required
-                className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:focus:border-neutral-600"
-              />
+              <label className={labelClass}>Mobile Number</label>
+              <input value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required className="input" />
             </div>
-
             {canReassign && salesmanOptions.length > 0 && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                  Assigned Salesman
-                </label>
+                <label className={labelClass}>Assigned Salesman</label>
                 <select
                   value={newOwnerUserId}
                   onChange={(e) => setNewOwnerUserId(e.target.value)}
-                  className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:focus:border-neutral-600"
+                  className="input"
                 >
                   {salesmanOptions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.displayName ?? s.id}
-                    </option>
+                    <option key={s.id} value={s.id}>{s.displayName ?? s.id}</option>
                   ))}
                 </select>
               </div>
@@ -198,18 +158,10 @@ export default function CustomerDetailClient({
           </div>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="flex-1 rounded-md border border-neutral-200 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-900"
-            >
+            <button type="button" onClick={resetForm} className="btn-outline flex-1">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 rounded-md bg-neutral-900 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-            >
+            <button type="submit" disabled={isPending} className="btn-primary flex-1 py-2.5">
               {isPending ? "Saving…" : "Save Changes"}
             </button>
           </div>
@@ -219,44 +171,35 @@ export default function CustomerDetailClient({
       {/* Visit history */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-sm font-semibold text-brand-tertiary dark:text-white">
             Visit History
-            <span className="ml-2 text-xs font-normal text-neutral-400 dark:text-neutral-500">
-              ({visits.length})
-            </span>
+            <span className="ml-2 text-xs font-normal text-brand-neutral">({visits.length})</span>
           </h2>
         </div>
 
         {visits.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-neutral-200 p-6 text-center text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+          <div className="rounded-xl border border-dashed border-brand-primary/30 p-6 text-center text-sm text-brand-neutral">
             No visits recorded for this customer yet.
           </div>
         ) : (
           <div className="space-y-2">
             {visits.map((v) => (
-              <div
-                key={v.id}
-                className="rounded-xl border border-neutral-200 p-3 dark:border-neutral-800"
-              >
+              <div key={v.id} className="card p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{v.projectName}</div>
+                    <div className="truncate text-sm font-medium text-brand-tertiary dark:text-white">
+                      {v.projectName}
+                    </div>
                     {v.salesmanName && (
-                      <div className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                        {v.salesmanName}
-                      </div>
+                      <div className="mt-0.5 text-xs text-brand-neutral">{v.salesmanName}</div>
                     )}
                   </div>
                   <div className="shrink-0 text-right">
                     <span className={statusPill(v.status)}>{v.status}</span>
-                    <div className="mt-1 text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
-                      {formatTime(v.dateTime)}
-                    </div>
+                    <div className="mt-1 text-xs tabular-nums text-brand-neutral">{formatTime(v.dateTime)}</div>
                   </div>
                 </div>
-                <div className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  {formatDate(v.dateTime)}
-                </div>
+                <div className="mt-1.5 text-xs text-brand-neutral">{formatDate(v.dateTime)}</div>
               </div>
             ))}
           </div>

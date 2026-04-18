@@ -56,20 +56,15 @@ const NAV_LINKS = [
 
 export default function SideNav(props: SideNavProps) {
   const [open, setOpen] = useState(false);
-  // Track whether we're mounted (needed for createPortal — no SSR)
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   // Close on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  useEffect(() => { setOpen(false); }, [pathname]);
 
-  // Close on Escape key
+  // Escape key
   useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -79,7 +74,7 @@ export default function SideNav(props: SideNavProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  // Lock body scroll while open
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -90,64 +85,61 @@ export default function SideNav(props: SideNavProps) {
     return pathname.startsWith(href);
   }
 
-  // The drawer + backdrop are portalled directly into <body> so they are
-  // never constrained by the header's stacking context (sticky + z-index).
+  const navLinkClass = (active: boolean) =>
+    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
+    (active
+      ? "bg-brand-primary text-white"
+      : "text-white/70 hover:bg-white/10 hover:text-white");
+
   const overlay = open ? (
     <>
-      {/* Full-screen backdrop — renders in body, not inside header */}
+      {/* Backdrop */}
       <div
-        style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.65)" }}
+        style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(8,29,38,0.72)" }}
         onClick={() => setOpen(false)}
         aria-hidden="true"
       />
 
-      {/* Side drawer — renders in body, fully above everything */}
+      {/* Side drawer — shares the same brand-tertiary dark as the header */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
         style={{
           position: "fixed",
-          top: 0,
-          left: 0,
-          bottom: 0,
+          top: 0, left: 0, bottom: 0,
           width: "288px",
           zIndex: 9999,
           display: "flex",
           flexDirection: "column",
-          // Explicitly set background so nothing bleeds through
-          background: "var(--sidenav-bg, white)",
-          boxShadow: "4px 0 32px rgba(0,0,0,0.22)",
+          boxShadow: "6px 0 40px rgba(8,29,38,0.45)",
         }}
-        className="bg-white dark:bg-neutral-950"
+        className="bg-brand-tertiary"
       >
         {/* ── Drawer header ── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <span className="text-sm font-semibold tracking-tight">Work Tracker</span>
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <span className="text-sm font-semibold tracking-tight text-white">Work Tracker</span>
           <button
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close navigation menu"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
+              <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
           </button>
         </div>
 
         {/* ── User info ── */}
-        <div className="shrink-0 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <div className="truncate text-sm font-semibold">{props.name}</div>
-          <div className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">
-            {props.email}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+        <div className="shrink-0 border-b border-white/10 px-4 py-3">
+          <div className="truncate text-sm font-semibold text-white">{props.name}</div>
+          <div className="mt-0.5 truncate text-xs text-white/55">{props.email}</div>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            <span className="rounded-md bg-brand-primary/25 px-2 py-0.5 text-xs font-medium text-brand-primary">
               {props.roleLabel}
             </span>
-            <span className="rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+            <span className="rounded-md bg-white/10 px-2 py-0.5 text-xs font-medium text-white/70">
               {props.statusLabel}
             </span>
           </div>
@@ -157,31 +149,14 @@ export default function SideNav(props: SideNavProps) {
         <nav className="flex-1 px-3 py-3">
           <div className="flex flex-col gap-0.5">
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
-                  (isActive(link.href)
-                    ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800")
-                }
-              >
+              <Link key={link.href} href={link.href} className={navLinkClass(isActive(link.href))}>
                 {link.icon}
                 {link.label}
               </Link>
             ))}
 
             {props.canManageProjects && (
-              <Link
-                href="/admin/projects"
-                className={
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
-                  (pathname === "/admin/projects"
-                    ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800")
-                }
-              >
+              <Link href="/admin/projects" className={navLinkClass(pathname === "/admin/projects")}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
@@ -191,15 +166,7 @@ export default function SideNav(props: SideNavProps) {
             )}
 
             {props.canManageUsers && (
-              <Link
-                href="/admin/user-management"
-                className={
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
-                  (pathname.startsWith("/admin/user")
-                    ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                    : "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800")
-                }
-              >
+              <Link href="/admin/user-management" className={navLinkClass(pathname.startsWith("/admin/user"))}>
                 <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
@@ -209,12 +176,12 @@ export default function SideNav(props: SideNavProps) {
           </div>
         </nav>
 
-        {/* ── Sign out ── */}
-        <div className="shrink-0 border-t border-neutral-200 px-3 py-3 dark:border-neutral-800">
+        {/* ── Logout ── */}
+        <div className="shrink-0 border-t border-white/10 px-3 py-3">
           <SignOutButton>
             <button
               type="button"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/15 hover:text-red-300"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -231,23 +198,19 @@ export default function SideNav(props: SideNavProps) {
 
   return (
     <>
-      {/* ── Hamburger trigger (top-left in header) ── */}
+      {/* ── Hamburger trigger (lives in the dark header) ── */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open navigation menu"
         aria-expanded={open}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-900 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50 dark:hover:bg-neutral-900"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 hover:border-white/40"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M4 7h16" />
-          <path d="M4 12h16" />
-          <path d="M4 17h16" />
+          <path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" />
         </svg>
       </button>
 
-      {/* Portal: renders backdrop + drawer directly in <body>, bypassing
-          the header's stacking context entirely */}
       {mounted && createPortal(overlay, document.body)}
     </>
   );
