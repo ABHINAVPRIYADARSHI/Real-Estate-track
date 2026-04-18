@@ -4,7 +4,7 @@ const pwaOptions = {
   dest: "public",
   register: "auto",
   skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
+  disable: false, // Set to false to test PWA generation in development mode
   // Basic caching for PWA navigation + common assets
   runtimeCaching: [
     {

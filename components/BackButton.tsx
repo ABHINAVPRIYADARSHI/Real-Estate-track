@@ -2,7 +2,16 @@
 
 import { useRouter, usePathname } from "next/navigation";
 
-const ROOT_PATHS = ["/", "/dashboard", "/sign-in", "/sign-up"];
+const ROOT_PATHS = [
+  "/",
+  "/dashboard",
+  "/dashboard/customers",
+  "/dashboard/visits",
+  "/admin/projects",
+  "/admin/user-management",
+  "/sign-in",
+  "/sign-up",
+];
 
 export default function BackButton() {
   const router = useRouter();
@@ -15,7 +24,7 @@ export default function BackButton() {
   if (isRoot) return null;
 
   return (
-    <button
+    <button 
       type="button"
       onClick={() => router.back()}
       aria-label="Go back"

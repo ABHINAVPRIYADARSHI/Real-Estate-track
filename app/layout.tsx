@@ -4,8 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import ThemeToggle from "@/components/theme-toggle";
 import PwaInstallBanner from "@/components/PwaInstallBanner";
-import HeaderAccountSection from "@/components/account/HeaderAccountSection";
-import BackButton from "@/components/BackButton";
+import HeaderSideNavSection from "@/components/account/HeaderSideNavSection";
 
 export const metadata: Metadata = {
   title: "Real Estate Staff Work Tracker",
@@ -36,14 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="min-h-screen bg-white dark:bg-neutral-950">
                 <header className="sticky top-0 z-10 border-b border-neutral-200/70 bg-white/80 p-3 backdrop-blur dark:border-neutral-800/70 dark:bg-neutral-950/80">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <BackButton />
+                    {/* Left: Hamburger (SideNav) + App Title */}
+                    <div className="flex items-center gap-2">
+                      <HeaderSideNavSection />
                       <div className="text-sm font-semibold">Work Tracker</div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <ThemeToggle />
-                      <HeaderAccountSection />
-                    </div>
+                    {/* Right: Theme toggle only */}
+                    <ThemeToggle />
                   </div>
                 </header>
                 <main className="mx-auto w-full max-w-2xl px-3 py-4">
@@ -63,10 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="min-h-screen bg-white dark:bg-neutral-950">
               <header className="sticky top-0 z-10 border-b border-neutral-200/70 bg-white/80 p-3 backdrop-blur dark:border-neutral-800/70 dark:bg-neutral-950/80">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <BackButton />
-                    <div className="text-sm font-semibold">Work Tracker</div>
-                  </div>
+                  <div className="text-sm font-semibold">Work Tracker</div>
                   <ThemeToggle />
                 </div>
               </header>
@@ -81,4 +76,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

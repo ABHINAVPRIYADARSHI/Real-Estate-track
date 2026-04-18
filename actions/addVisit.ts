@@ -7,7 +7,7 @@ import { VisitStatus } from "@prisma/client";
 
 const AddVisitSchema = z.object({
   customerId: z.string().min(1),
-  projectName: z.string().min(1).max(200),
+  projectId: z.string().min(1, "Please select a project"),
   dateTime: z
     .string()
     .min(10, "Date/time is required")
@@ -18,7 +18,7 @@ const AddVisitSchema = z.object({
 
 export async function addVisitAction(input: {
   customerId: string;
-  projectName: string;
+  projectId: string;
   dateTime: string;
   status: VisitStatus;
   assignedSalesmanId?: string;
@@ -40,6 +40,16 @@ export async function addVisitAction(input: {
     throw new Error("Not authorized");
   }
 
+  // Validate project exists and is active
+  const project = await prisma.project.findUnique({
+    where: { id: parsed.data.projectId },
+    select: { id: true, name: true, isActive: true },
+  });
+
+  if (!project || !project.isActive) {
+    throw new Error("Selected project is not available");
+  }
+
   const customer = await prisma.customer.findUnique({
     where: { id: parsed.data.customerId },
     include: { owner: true },
@@ -48,7 +58,6 @@ export async function addVisitAction(input: {
   if (!customer) throw new Error("Customer not found");
 
   const assignedDate = new Date(parsed.data.dateTime);
-
   const role = currentUser.role;
 
   let assignedSalesmanId: string;
@@ -68,7 +77,7 @@ export async function addVisitAction(input: {
       customer.owner.status !== "Active" ||
       customer.owner.managerId !== currentUser.id
     ) {
-      throw new Error("You can only add visits for your team’s leads");
+      throw new Error("You can only add visits for your team's leads");
     }
     if (!parsed.data.assignedSalesmanId) {
       throw new Error("Assigned salesman is required");
@@ -96,11 +105,11 @@ export async function addVisitAction(input: {
     throw new Error("Assigned salesman is not active");
   }
 
-  // Manager/Admin may delegate to any salesman; permissions on customer are enforced above.
   const visit = await prisma.visit.create({
     data: {
       customerId: customer.id,
-      projectName: parsed.data.projectName,
+      projectId: project.id,
+      projectName: project.name, // denormalized for display without joins
       dateTime: assignedDate,
       status: parsed.data.status,
       assignedSalesmanId,
@@ -109,4 +118,3 @@ export async function addVisitAction(input: {
 
   return { ok: true, visitId: visit.id };
 }
-

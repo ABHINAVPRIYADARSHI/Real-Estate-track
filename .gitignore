@@ -1,49 +1,89 @@
-# dependencies
-node_modules/
+# =============================================================================
+# Next.js — Real Estate Staff Work Tracker
+# =============================================================================
 
-# next.js build
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ── Next.js ───────────────────────────────────────────────────────────────────
 .next/
 out/
 
-# production build
+# ── Build output ──────────────────────────────────────────────────────────────
 build/
 dist/
 
-# env files (keep .env.example if needed)
+# ── Environment variables ─────────────────────────────────────────────────────
+# Keep .env.example committed; ignore everything else
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
-# debug logs
+# ── Prisma ────────────────────────────────────────────────────────────────────
+# Local SQLite dev databases (not used here, but safe to include)
+prisma/*.db
+prisma/*.db-journal
+# Migration lock file is intentionally committed; ignore nothing else in prisma/
+
+# ── TypeScript ────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+*.log
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# ── Testing ───────────────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
 
-# IDE / editors
-.vscode/
+# ── Cache & temp ──────────────────────────────────────────────────────────────
+.cache/
+.turbo/
+.parcel-cache/
+*.tgz
+
+# ── PWA / Service Worker generated files ─────────────────────────────────────
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# ── Deployment platforms ──────────────────────────────────────────────────────
+.vercel/
+.netlify/
+
+# ── IDE / Editors ─────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
 *~
 
-# OS files
+# ── OS files ──────────────────────────────────────────────────────────────────
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
 desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
-# prisma
-prisma/*.db
-prisma/*.db-journal
-
-# vercel
-.vercel/
-
-# turbo
-.turbo/
+# Linux
+*~
+.fuse_hidden*
+.Trash-*

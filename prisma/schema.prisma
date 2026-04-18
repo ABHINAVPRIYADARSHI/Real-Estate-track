@@ -73,12 +73,35 @@ model Customer {
   @@index([ownerUserId])
 }
 
+model Project {
+  id          String  @id @default(cuid())
+  name        String
+  location    String
+  description String?
+  // Price stored as string to avoid decimal precision issues; display layer formats it.
+  price       String?
+  isActive    Boolean @default(true)
+
+  visits Visit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
 model Visit {
   id String @id @default(cuid())
 
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
+  // projectId is optional for backward compatibility with existing visits that
+  // only have projectName. All new visits should have both set.
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Denormalized project name — kept for display without joins and for legacy data.
   projectName String
 
   // When the visit happens.
@@ -94,5 +117,5 @@ model Visit {
 
   @@index([assignedSalesmanId, dateTime])
   @@index([customerId, dateTime])
+  @@index([projectId])
 }
-
