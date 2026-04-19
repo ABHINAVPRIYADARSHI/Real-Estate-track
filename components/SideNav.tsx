@@ -118,7 +118,7 @@ export default function SideNav(props: SideNavProps) {
       >
         {/* ── Drawer header ── */}
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-          <span className="text-sm font-semibold tracking-tight text-white">Work Tracker</span>
+          <span className="text-sm font-semibold tracking-tight text-white">Aarya Hub</span>
           <button
             type="button"
             onClick={() => setOpen(false)}

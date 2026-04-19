@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {/* Left: Hamburger (SideNav) + App Title */}
                     <div className="flex items-center gap-2">
                       <HeaderSideNavSection />
-                      <div className="text-sm font-semibold text-white">Work Tracker</div>
+                      <div className="text-sm font-semibold text-white">Aarya Hub</div>
                     </div>
                     {/* Right: Theme toggle only */}
                     <ThemeToggle />
