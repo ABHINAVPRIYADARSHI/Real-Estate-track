@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import FullCalendar from "@/components/calendar/FullCalendar";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +57,12 @@ export default async function VisitsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Visits</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-brand-tertiary dark:text-white">Visits</h1>
+        <Link href="/dashboard/visit-logger" className="btn-primary py-2">
+          + Log Visit
+        </Link>
+      </div>
       <FullCalendar
         initialVisits={agenda.map((v: any) => ({
           id: v.id,

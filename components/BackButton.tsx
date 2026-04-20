@@ -5,10 +5,6 @@ import { useRouter, usePathname } from "next/navigation";
 const ROOT_PATHS = [
   "/",
   "/dashboard",
-  "/dashboard/customers",
-  "/dashboard/visits",
-  "/admin/projects",
-  "/admin/user-management",
   "/sign-in",
   "/sign-up",
 ];
@@ -28,7 +24,7 @@ export default function BackButton() {
       type="button"
       onClick={() => router.back()}
       aria-label="Go back"
-      className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+      className="inline-flex items-center justify-center rounded-md p-1.5 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

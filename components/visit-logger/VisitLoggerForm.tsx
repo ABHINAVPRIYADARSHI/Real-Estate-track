@@ -6,6 +6,7 @@ import type { Role, UserStatus, VisitStatus } from "@prisma/client";
 import { addVisitAction } from "@/actions/addVisit";
 import { searchCustomersAction } from "@/actions/searchCustomers";
 import type { ProjectOption } from "@/actions/getProjects";
+import Spinner from "@/components/ui/Spinner";
 
 type CustomerSearchResult = {
   id: string;
@@ -119,9 +120,10 @@ export default function VisitLoggerForm(props: {
             type="button"
             disabled={searching || query.trim().length === 0}
             onClick={onSearch}
-            className="rounded-md bg-brand-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-brand-secondary disabled:opacity-50"
+            className="rounded-md bg-brand-primary px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-brand-secondary disabled:opacity-50 flex items-center gap-1.5"
           >
-            {searching ? "Searching..." : "Search"}
+            {searching && <Spinner size="xs" />}
+            {searching ? "Searching…" : "Search"}
           </button>
         </div>
 
@@ -248,8 +250,9 @@ export default function VisitLoggerForm(props: {
         )}
       </div>
 
-      <button type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? "Saving..." : "Log Visit"}
+      <button type="submit" disabled={busy} className="btn-primary flex w-full items-center justify-center gap-2">
+        {busy && <Spinner size="sm" />}
+        {busy ? "Saving…" : "Log Visit"}
       </button>
     </form>
   );

@@ -33,11 +33,8 @@ export default async function CustomersPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Customers</h1>
-        <Link
-          href="/dashboard/add-customer"
-          className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-neutral-100 dark:text-neutral-900"
-        >
+        <h1 className="text-xl font-semibold text-brand-tertiary dark:text-white">Customers</h1>
+        <Link href="/dashboard/add-customer" className="btn-primary py-2">
           + Add Customer
         </Link>
       </div>

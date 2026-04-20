@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addProjectAction, updateProjectAction } from "@/actions/addProject";
 import type { ProjectOption } from "@/actions/getProjects";
+import Spinner from "@/components/ui/Spinner";
 
 type ProjectWithCount = ProjectOption & { _count: { visits: number } };
 
@@ -145,14 +146,15 @@ export default function ProjectsManager({ initialProjects }: { initialProjects: 
             </div>
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={closeForm} className="btn-outline flex-1">
-              Cancel
-            </button>
-            <button type="submit" disabled={isPending} className="btn-primary flex-1 py-2.5">
-              {isPending ? "Saving…" : editingId ? "Save Changes" : "Add Project"}
-            </button>
-          </div>
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={closeForm} className="btn-outline flex-1">
+                Cancel
+              </button>
+              <button type="submit" disabled={isPending} className="btn-primary flex flex-1 items-center justify-center gap-2 py-2.5">
+                {isPending && <Spinner size="sm" />}
+                {isPending ? "Saving…" : editingId ? "Save Changes" : "Add Project"}
+              </button>
+            </div>
         </form>
       )}
 

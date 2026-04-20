@@ -5,6 +5,7 @@ import ThemeToggle from "@/components/theme-toggle";
 import PwaInstallBanner from "@/components/PwaInstallBanner";
 import HeaderSideNavSection from "@/components/account/HeaderSideNavSection";
 import TopProgressBar from "@/components/ui/TopProgressBar";
+import BackButton from "@/components/BackButton";
 
 export const metadata: Metadata = {
   title: "Real Estate Staff Work Tracker",
@@ -29,9 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="min-h-screen bg-brand-surface dark:bg-brand-dark-bg">
             <header className="sticky top-0 z-10 border-b border-white/10 bg-brand-tertiary p-3">
               <div className="flex items-center justify-between gap-3">
-                {/* Left: Hamburger (SideNav) + App Title */}
+                {/* Left: Hamburger (SideNav) + Back + App Title */}
                 <div className="flex items-center gap-2">
                   <HeaderSideNavSection />
+                  <BackButton />
                   <div className="text-sm font-semibold text-white">Aarya Hub</div>
                 </div>
                 {/* Right: Theme toggle only */}
