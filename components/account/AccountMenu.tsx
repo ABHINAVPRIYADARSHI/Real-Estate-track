@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type AccountMenuProps = {
@@ -15,6 +16,13 @@ type AccountMenuProps = {
 export default function AccountMenu(props: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const supabase = createClient();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+  }
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -99,14 +107,13 @@ export default function AccountMenu(props: AccountMenuProps) {
               </Link>
             ) : null}
 
-            <SignOutButton>
-              <button
-                type="button"
-                className="block w-full rounded-md bg-neutral-900 px-3 py-2 text-left text-sm text-white hover:opacity-90 dark:bg-neutral-50 dark:text-neutral-900"
-              >
-                Logout
-              </button>
-            </SignOutButton>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="block w-full rounded-md bg-neutral-900 px-3 py-2 text-left text-sm text-white hover:opacity-90 dark:bg-neutral-50 dark:text-neutral-900"
+            >
+              Logout
+            </button>
           </div>
         </div>
       ) : null}

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { getCustomersAction } from "@/actions/getCustomers";
@@ -12,11 +12,12 @@ export default async function CustomersPage({
 }: {
   searchParams: { q?: string; page?: string };
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
+    where: { authId: user.id },
     select: { role: true, status: true },
   });
 

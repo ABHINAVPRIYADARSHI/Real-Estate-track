@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -26,17 +26,12 @@ export async function updateCustomerAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
+
+  const dbUserId = currentUser.dbUserId;
 
   // Only Admin and Manager can reassign owner
   if (parsed.data.newOwnerUserId && currentUser.role === "Salesman") {
@@ -51,20 +46,14 @@ export async function updateCustomerAction(input: {
   if (!customer) throw new Error("Customer not found");
 
   // Check access: Salesman can only edit their own customers
-  if (
-    currentUser.role === "Salesman" &&
-    customer.ownerUserId !== currentUser.id
-  ) {
+  if (currentUser.role === "Salesman" && customer.ownerUserId !== dbUserId) {
     throw new Error("You don't have access to this customer");
   }
 
   // Check access: Manager can only edit customers in their team
   if (currentUser.role === "Manager") {
     const ownerInfo = customer.owner;
-    if (
-      ownerInfo.role !== "Salesman" ||
-      ownerInfo.managerId !== currentUser.id
-    ) {
+    if (ownerInfo.role !== "Salesman" || ownerInfo.managerId !== dbUserId) {
       throw new Error("You don't have access to this customer");
     }
   }
@@ -82,10 +71,7 @@ export async function updateCustomerAction(input: {
     }
 
     // Manager can only reassign within their team
-    if (
-      currentUser.role === "Manager" &&
-      newOwner.managerId !== currentUser.id
-    ) {
+    if (currentUser.role === "Manager" && newOwner.managerId !== dbUserId) {
       throw new Error("You can only reassign to salesmen in your team");
     }
 

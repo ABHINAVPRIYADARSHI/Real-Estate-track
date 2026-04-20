@@ -1,0 +1,11 @@
+import Spinner from "@/components/ui/Spinner";
+
+/** Root-level loading — shown during initial page nav before layout renders */
+export default function RootLoading() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+      <Spinner size="lg" />
+      <p className="text-sm text-brand-neutral animate-pulse">Loading…</p>
+    </div>
+  );
+}

@@ -1,12 +1,13 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import AccountMenu from "@/components/account/AccountMenu";
 
 export default async function HeaderAccountSection() {
-  const { userId } = await auth();
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!userId) {
+  if (!user) {
     return (
       <Link
         href="/sign-in"
@@ -17,29 +18,16 @@ export default async function HeaderAccountSection() {
     );
   }
 
-  const [dbUser, clerkUser] = await Promise.all([
-    prisma.user.findUnique({
-      where: { clerkUserId: userId },
-      select: {
-        displayName: true,
-        role: true,
-        status: true,
-      },
-    }),
-    currentUser(),
-  ]);
+  const dbUser = await prisma.user.findUnique({
+    where: { authId: user.id },
+    select: { displayName: true, email: true, role: true, status: true },
+  });
 
-  const name =
-    dbUser?.displayName ??
-    clerkUser?.fullName ??
-    clerkUser?.username ??
-    "Signed-in user";
-  const email =
-    clerkUser?.primaryEmailAddress?.emailAddress ?? "No email available";
+  const name = dbUser?.displayName ?? user.user_metadata?.full_name ?? "Signed-in user";
+  const email = dbUser?.email ?? user.email ?? "No email available";
   const roleLabel = dbUser?.role ?? "Not assigned";
   const statusLabel = dbUser?.status ?? "Pending";
-  const canManageUsers =
-    dbUser?.status === "Active" && dbUser?.role === "Admin";
+  const canManageUsers = dbUser?.status === "Active" && dbUser?.role === "Admin";
 
   return (
     <AccountMenu

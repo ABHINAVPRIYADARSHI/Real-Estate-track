@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -35,15 +35,8 @@ export async function getCustomersAction(input: {
   const parsed = GetCustomersSchema.safeParse(input);
   if (!parsed.success) throw new Error("Invalid input");
 
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
 
@@ -53,11 +46,11 @@ export async function getCustomersAction(input: {
   // Scope by role
   const scopeWhere =
     currentUser.role === "Salesman"
-      ? { ownerUserId: currentUser.id }
+      ? { ownerUserId: currentUser.dbUserId }
       : currentUser.role === "Manager"
         ? {
             owner: {
-              managerId: currentUser.id,
+              managerId: currentUser.dbUserId,
               role: "Salesman" as const,
               status: "Active" as const,
             },

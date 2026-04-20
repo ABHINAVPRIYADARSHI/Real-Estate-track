@@ -1,27 +1,15 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Role, UserStatus } from "@prisma/client";
 
 async function requireActiveAdmin() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const admin = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (
-    !admin ||
-    admin.status !== "Active" ||
-    admin.role !== "Admin"
-  ) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || currentUser.role !== "Admin") {
     throw new Error("Admin access required");
   }
-
-  return admin;
+  return currentUser;
 }
 
 export async function approvePendingUserAction(input: {
@@ -98,8 +86,6 @@ export async function setUserStatusAction(input: {
   });
   if (!target) throw new Error("User not found");
 
-  // Support “Suspend/Disable instantly” (Active <-> Suspended).
-  // Approval/pending gating is handled by middleware.
   return prisma.user.update({
     where: { id: input.userId },
     data: {
@@ -107,4 +93,3 @@ export async function setUserStatusAction(input: {
     },
   });
 }
-

@@ -1,9 +1,8 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import type { Role, UserStatus } from "@prisma/client";
 
 const SearchCustomersSchema = z.object({
   query: z.string().trim().min(1, "Enter a name or mobile number"),
@@ -24,34 +23,27 @@ export async function searchCustomersAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
 
   const q = parsed.data.query;
+  const dbUserId = currentUser.dbUserId;
 
   const scopeWhere =
     currentUser.role === "Salesman"
-      ? { ownerUserId: currentUser.id }
+      ? { ownerUserId: dbUserId }
       : currentUser.role === "Manager"
         ? {
             owner: {
-              managerId: currentUser.id,
+              managerId: dbUserId,
               role: "Salesman",
               status: "Active",
             },
           }
         : {};
 
-  // mobile search tends to be exact-ish; name search is case-insensitive
   const customers = await prisma.customer.findMany({
     where: {
       ...(scopeWhere as any),
@@ -72,4 +64,3 @@ export async function searchCustomersAction(input: {
 
   return customers;
 }
-

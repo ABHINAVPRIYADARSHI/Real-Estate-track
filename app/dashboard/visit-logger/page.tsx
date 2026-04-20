@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import VisitLoggerForm from "@/components/visit-logger/VisitLoggerForm";
 import { redirect } from "next/navigation";
@@ -7,11 +7,12 @@ import { getActiveProjectsAction } from "@/actions/getProjects";
 export const dynamic = "force-dynamic";
 
 export default async function VisitLoggerPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
+    where: { authId: user.id },
     select: { id: true, role: true, status: true },
   });
 

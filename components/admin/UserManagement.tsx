@@ -7,7 +7,8 @@ import { approvePendingUserAction, setUserStatusAction } from "@/actions/adminUs
 
 type DbUser = {
   id: string;
-  clerkUserId: string;
+  authId: string;
+  email: string | null;
   displayName: string | null;
   role: Role | null;
   status: UserStatus;
@@ -107,7 +108,7 @@ export default function UserManagement(props: { users: DbUser[]; managers: DbUse
                       <div className="font-medium text-brand-tertiary dark:text-white">
                         {u.displayName ?? "Unnamed user"}
                       </div>
-                      <div className="mt-1 text-[11px] text-brand-neutral">{u.clerkUserId}</div>
+                      <div className="mt-1 text-[11px] text-brand-neutral">{u.email ?? u.authId}</div>
                     </td>
 
                     <td className="p-3 align-top">
@@ -153,7 +154,7 @@ export default function UserManagement(props: { users: DbUser[]; managers: DbUse
                           >
                             {props.managers.length === 0 && <option value="">No managers available</option>}
                             {props.managers.map((m) => (
-                              <option key={m.id} value={m.id}>{m.displayName ?? m.clerkUserId}</option>
+                              <option key={m.id} value={m.id}>{m.displayName ?? m.email ?? m.authId}</option>
                             ))}
                           </select>
                         ) : (

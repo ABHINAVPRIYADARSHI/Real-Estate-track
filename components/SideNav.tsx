@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -58,6 +59,8 @@ export default function SideNav(props: SideNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
+  const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -80,6 +83,11 @@ export default function SideNav(props: SideNavProps) {
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+  }
+
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
@@ -100,7 +108,7 @@ export default function SideNav(props: SideNavProps) {
         aria-hidden="true"
       />
 
-      {/* Side drawer — shares the same brand-tertiary dark as the header */}
+      {/* Side drawer */}
       <div
         role="dialog"
         aria-modal="true"
@@ -178,19 +186,18 @@ export default function SideNav(props: SideNavProps) {
 
         {/* ── Logout ── */}
         <div className="shrink-0 border-t border-white/10 px-3 py-3">
-          <SignOutButton>
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/15 hover:text-red-300"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Logout
-            </button>
-          </SignOutButton>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/15 hover:text-red-300"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
         </div>
       </div>
     </>
@@ -198,7 +205,7 @@ export default function SideNav(props: SideNavProps) {
 
   return (
     <>
-      {/* ── Hamburger trigger (lives in the dark header) ── */}
+      {/* ── Hamburger trigger ── */}
       <button
         type="button"
         onClick={() => setOpen(true)}

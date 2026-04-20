@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export type ProjectOption = {
@@ -14,14 +14,8 @@ export type ProjectOption = {
 
 /** Returns all active projects — used in visit logger dropdown (all roles). */
 export async function getActiveProjectsAction(): Promise<ProjectOption[]> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const user = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { status: true, role: true },
-  });
-  if (!user || user.status !== "Active" || !user.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
 
@@ -45,14 +39,8 @@ export async function getActiveProjectsAction(): Promise<ProjectOption[]> {
 export async function getAllProjectsAction(): Promise<
   (ProjectOption & { _count: { visits: number } })[]
 > {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const user = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { status: true, role: true },
-  });
-  if (!user || user.status !== "Active" || user.role !== "Admin") {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || currentUser.role !== "Admin") {
     throw new Error("Only Admins can view all projects");
   }
 

@@ -29,9 +29,9 @@ enum VisitStatus {
 
 model User {
   id           String    @id @default(cuid())
-  clerkUserId String    @unique
+  authId       String     @unique   // Supabase auth.users UUID
   displayName String?
-
+  email        String?
   // Role is assigned only after Admin approval.
   role   Role?
   status UserStatus @default(Pending)

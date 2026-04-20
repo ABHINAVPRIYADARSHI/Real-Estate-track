@@ -1,6 +1,6 @@
 {
-  "name": "Real Estate Work Tracker",
-  "short_name": "Work Tracker",
+  "name": "Aarya Hub",
+  "short_name": "Aarya Hub",
   "description": "Internal staff work tracker",
   "start_url": "/dashboard",
   "scope": "/",

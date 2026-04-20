@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export type SalesmanOption = {
@@ -15,15 +15,8 @@ export type SalesmanOption = {
  * - Salesman: empty (cannot reassign)
  */
 export async function getSalesmanListAction(): Promise<SalesmanOption[]> {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
 
@@ -32,7 +25,7 @@ export async function getSalesmanListAction(): Promise<SalesmanOption[]> {
   const salesmen = await prisma.user.findMany({
     where:
       currentUser.role === "Manager"
-        ? { role: "Salesman", status: "Active", managerId: currentUser.id }
+        ? { role: "Salesman", status: "Active", managerId: currentUser.dbUserId }
         : { role: "Salesman", status: "Active" },
     select: { id: true, displayName: true },
     orderBy: { displayName: "asc" },

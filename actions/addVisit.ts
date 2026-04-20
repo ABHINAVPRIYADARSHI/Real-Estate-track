@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { VisitStatus } from "@prisma/client";
@@ -28,15 +28,8 @@ export async function addVisitAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Not authorized");
   }
 
@@ -59,23 +52,24 @@ export async function addVisitAction(input: {
 
   const assignedDate = new Date(parsed.data.dateTime);
   const role = currentUser.role;
+  const dbUserId = currentUser.dbUserId;
 
   let assignedSalesmanId: string;
 
   if (role === "Salesman") {
-    if (customer.ownerUserId !== currentUser.id) {
+    if (customer.ownerUserId !== dbUserId) {
       throw new Error("You can only add visits for your owned leads");
     }
     if (!customer.owner || customer.owner.status !== "Active" || customer.owner.role !== "Salesman") {
       throw new Error("Lead owner is not active");
     }
-    assignedSalesmanId = currentUser.id;
+    assignedSalesmanId = dbUserId;
   } else if (role === "Manager") {
     if (
       !customer.owner ||
       customer.owner.role !== "Salesman" ||
       customer.owner.status !== "Active" ||
-      customer.owner.managerId !== currentUser.id
+      customer.owner.managerId !== dbUserId
     ) {
       throw new Error("You can only add visits for your team's leads");
     }
@@ -109,7 +103,7 @@ export async function addVisitAction(input: {
     data: {
       customerId: customer.id,
       projectId: project.id,
-      projectName: project.name, // denormalized for display without joins
+      projectName: project.name,
       dateTime: assignedDate,
       status: parsed.data.status,
       assignedSalesmanId,

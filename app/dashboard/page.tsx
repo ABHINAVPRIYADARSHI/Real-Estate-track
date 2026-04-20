@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -11,11 +11,12 @@ function formatPercent(n: number) {
 }
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
+    where: { authId: user.id },
     select: { id: true, role: true, status: true, managerId: true, displayName: true },
   });
 
@@ -55,7 +56,7 @@ export default async function DashboardPage() {
             where: { status: "Pending" },
             orderBy: { createdAt: "asc" },
             take: 6,
-            select: { id: true, displayName: true, clerkUserId: true },
+            select: { id: true, displayName: true, email: true },
           }),
         ])
       : null;
@@ -144,10 +145,7 @@ export default async function DashboardPage() {
                 {pendingCount}
               </div>
             </div>
-            <Link
-              href="/admin/user-management"
-              className="btn-outline text-xs"
-            >
+            <Link href="/admin/user-management" className="btn-outline text-xs">
               Open approvals
             </Link>
           </div>
@@ -161,7 +159,7 @@ export default async function DashboardPage() {
                   key={pendingUser.id}
                   className="truncate rounded-md bg-brand-primary/8 px-2 py-1.5 text-brand-tertiary dark:bg-brand-primary/15 dark:text-white"
                 >
-                  {pendingUser.displayName ?? pendingUser.clerkUserId}
+                  {pendingUser.displayName ?? pendingUser.email ?? "Unnamed user"}
                 </div>
               ))
             )}

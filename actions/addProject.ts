@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -17,15 +17,8 @@ const UpdateProjectSchema = AddProjectSchema.extend({
 });
 
 async function requireAdmin() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const user = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { role: true, status: true },
-  });
-
-  if (!user || user.status !== "Active" || user.role !== "Admin") {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || currentUser.role !== "Admin") {
     throw new Error("Only Admins can manage projects");
   }
 }

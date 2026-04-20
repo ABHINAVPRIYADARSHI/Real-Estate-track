@@ -1,32 +1,27 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function getVisitsByMonthAction(input: {
   year: number;
   month: number; // 0-indexed (0 = January)
 }) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Login required");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, role: true, status: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("Account not active");
   }
 
+  const dbUserId = currentUser.dbUserId;
+
   const visitsWhere =
     currentUser.role === "Salesman"
-      ? { assignedSalesmanId: currentUser.id }
+      ? { assignedSalesmanId: dbUserId }
       : currentUser.role === "Manager"
         ? {
             customer: {
               owner: {
-                managerId: currentUser.id,
+                managerId: dbUserId,
                 role: "Salesman" as const,
                 status: "Active" as const,
               },

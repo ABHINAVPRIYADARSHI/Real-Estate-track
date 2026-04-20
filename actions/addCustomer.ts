@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
@@ -21,20 +21,19 @@ export async function addCustomerAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-    select: { id: true, status: true, role: true, displayName: true },
-  });
-
-  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+  const currentUser = await getAuthenticatedUser();
+  if (currentUser.status !== "Active" || !currentUser.role) {
     throw new Error("You do not have permission to add customers");
   }
 
-  let ownerUserId = currentUser.id;
-  let ownerName = currentUser.displayName ?? null;
+  // Fetch display name separately (getAuthenticatedUser doesn't return it)
+  const dbUser = await prisma.user.findUnique({
+    where: { id: currentUser.dbUserId },
+    select: { displayName: true },
+  });
+
+  let ownerUserId = currentUser.dbUserId;
+  let ownerName = dbUser?.displayName ?? null;
 
   if (currentUser.role !== "Salesman") {
     const owner =
@@ -43,7 +42,7 @@ export async function addCustomerAction(input: {
             where: {
               role: "Salesman",
               status: "Active",
-              managerId: currentUser.id,
+              managerId: currentUser.dbUserId,
             },
             orderBy: { createdAt: "asc" },
             select: { id: true, displayName: true },
@@ -79,13 +78,13 @@ export async function addCustomerAction(input: {
   });
 
   if (existing) {
-    const ownerName =
+    const existingOwnerName =
       existing.owner.displayName ??
       existing.ownerName ??
       "this user";
 
     throw new Error(
-      `This lead is already registered to ${ownerName}.`
+      `This lead is already registered to ${existingOwnerName}.`
     );
   }
 
@@ -108,17 +107,16 @@ export async function addCustomerAction(input: {
         include: { owner: { select: { displayName: true } } },
       });
 
-      const ownerName =
+      const raceOwnerName =
         existingAfterRace?.owner.displayName ??
         existingAfterRace?.ownerName ??
         "this user";
 
       throw new Error(
-        `This lead is already registered to ${ownerName}.`
+        `This lead is already registered to ${raceOwnerName}.`
       );
     }
 
     throw err;
   }
 }
-

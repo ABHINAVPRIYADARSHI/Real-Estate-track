@@ -1,52 +1,30 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/admin(.*)"]);
+const isProtectedRoute = (pathname: string) =>
+  pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isProtectedRoute(req)) return;
+export async function middleware(request: NextRequest) {
+  // Refreshes the session cookie — MUST be first, no Prisma here (Edge runtime)
+  const { supabaseResponse, user } = await updateSession(request)
 
-  const { isAuthenticated, userId } = await auth();
+  const pathname = request.nextUrl.pathname
 
-  if (!isAuthenticated || !userId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
+  // Non-protected routes: just refresh cookies and pass through
+  if (!isProtectedRoute(pathname)) return supabaseResponse
+
+  // Unauthenticated → sign-in
+  if (!user) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
-  // Middleware runs on the edge, so we call a small Node route to read Prisma.
-  const cookie = req.headers.get("cookie") ?? "";
-  const statusRes = await fetch(
-    `${req.nextUrl.origin}/api/user-status`,
-    {
-      headers: { cookie },
-      cache: "no-store",
-    }
-  );
-
-  if (!statusRes.ok) {
-    return NextResponse.redirect(new URL("/blocked/pending", req.url));
-  }
-
-  const { status } = (await statusRes.json()) as { status: string };
-
-  if (status === "Pending") {
-    return NextResponse.redirect(
-      new URL("/blocked/pending", req.url)
-    );
-  }
-
-  if (status === "Suspended") {
-    return NextResponse.redirect(
-      new URL("/blocked/suspended", req.url)
-    );
-  }
-});
+  // Authenticated + protected route: let the page handle role/status checks
+  return supabaseResponse
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
-};
-
+}
