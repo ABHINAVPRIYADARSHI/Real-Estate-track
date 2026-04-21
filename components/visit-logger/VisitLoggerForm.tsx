@@ -77,9 +77,7 @@ export default function VisitLoggerForm(props: {
           status,
           assignedSalesmanId: props.role === "Salesman" ? undefined : assignedSalesmanId,
         });
-        router.refresh();
-        setSelectedProjectId("");
-        setStatus("Scheduled");
+        router.push("/dashboard/visits");
       } catch (e: any) {
         setError(e?.message ?? "Failed to log visit");
       }

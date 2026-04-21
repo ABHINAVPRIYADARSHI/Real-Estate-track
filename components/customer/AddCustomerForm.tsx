@@ -42,11 +42,7 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
           mobileNumber: mobileNumber.trim(),
           ownerUserId: needsAssignment ? ownerUserId : undefined,
         });
-        setName("");
-        setMobileNumber("");
-        setOwnerUserId("");
-        setSuccess("Customer added successfully.");
-        router.refresh();
+        router.push("/dashboard/customers");
       } catch (err: any) {
         setError(err?.message ?? "Failed to add customer");
       }

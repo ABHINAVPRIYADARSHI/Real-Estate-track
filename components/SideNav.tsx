@@ -85,7 +85,10 @@ export default function SideNav(props: SideNavProps) {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.push("/sign-in");
+    // Hard redirect: root layout is a server component and never re-runs on
+    // client-side navigation, so router.push() would leave the stale SideNav
+    // in the DOM. A full page load forces the server to re-render it as null.
+    window.location.href = "/sign-in";
   }
 
   function isActive(href: string) {

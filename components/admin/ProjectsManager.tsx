@@ -41,14 +41,14 @@ export default function ProjectsManager({ initialProjects }: { initialProjects: 
         if (editingId) {
           await updateProjectAction({ projectId: editingId, ...form });
           setSuccess("Project updated.");
+          router.refresh();
+          closeForm();
+          const { getAllProjectsAction } = await import("@/actions/getProjects");
+          setProjects(await getAllProjectsAction());
         } else {
           await addProjectAction(form);
-          setSuccess("Project added.");
+          router.push("/admin/projects");
         }
-        router.refresh();
-        closeForm();
-        const { getAllProjectsAction } = await import("@/actions/getProjects");
-        setProjects(await getAllProjectsAction());
       } catch (err: any) {
         setError(err?.message ?? "Something went wrong");
       }
