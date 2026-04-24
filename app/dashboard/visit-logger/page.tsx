@@ -1,18 +1,21 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { Role } from "@prisma/client";
 import VisitLoggerForm from "@/components/visit-logger/VisitLoggerForm";
 import { redirect } from "next/navigation";
-import { getActiveProjectsAction } from "@/actions/getProjects";
 
 export const dynamic = "force-dynamic";
 
 export default async function VisitLoggerPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  let authUser: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  try {
+    authUser = await getAuthenticatedUser();
+  } catch {
+    redirect("/sign-in");
+  }
 
   const currentUser = await prisma.user.findUnique({
-    where: { authId: user.id },
+    where: { id: authUser!.dbUserId },
     select: { id: true, role: true, status: true },
   });
 
@@ -20,24 +23,49 @@ export default async function VisitLoggerPage() {
     redirect("/blocked/pending");
   }
 
-  const [salesmen, projects] = await Promise.all([
+  const salesmen =
     currentUser.role === "Salesman"
       ? []
-      : prisma.user.findMany({
+      : await prisma.user.findMany({
           where: { role: "Salesman", status: "Active" },
           select: { id: true, displayName: true, status: true },
           orderBy: { displayName: "asc" },
-        }),
-    getActiveProjectsAction(),
-  ]);
+        });
+
+  // Fetch customers based on role
+  const customers = await prisma.customer.findMany({
+    where:
+      currentUser.role === "Salesman"
+        ? { ownerUserId: currentUser.id }
+        : currentUser.role === "Manager"
+          ? {
+              owner: {
+                managerId: currentUser.id,
+                role: "Salesman",
+                status: "Active",
+              },
+            }
+          : {},
+    select: { id: true, name: true, mobileNumber: true },
+    orderBy: { name: "asc" },
+  });
+
+  // Fetch active projects for the dropdown
+  const projects = await prisma.project.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, location: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="space-y-4">
       <VisitLoggerForm
-        role={currentUser.role}
+        role={currentUser.role as Role}
         salesmen={salesmen}
+        customers={customers}
         projects={projects}
       />
     </div>
   );
 }
+

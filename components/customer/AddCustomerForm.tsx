@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { addCustomerAction } from "@/actions/addCustomer";
 import Spinner from "@/components/ui/Spinner";
+import Snackbar from "@/components/ui/Snackbar";
 
 type SalesmanOption = { id: string; displayName: string | null };
 
@@ -20,7 +21,8 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
   const [mobileNumber, setMobileNumber] = useState("");
   const [ownerUserId, setOwnerUserId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<string | null>(null);
+  // success state kept for backward compat but snackbar replaces inline banner
 
   const isSalesman = role === "Salesman";
   const needsAssignment = !isSalesman; // Admin or Manager must pick a salesman
@@ -28,7 +30,6 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
 
     if (needsAssignment && !ownerUserId) {
       setError("Please select a salesman to assign this customer to.");
@@ -42,7 +43,8 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
           mobileNumber: mobileNumber.trim(),
           ownerUserId: needsAssignment ? ownerUserId : undefined,
         });
-        router.push("/dashboard/customers");
+        setSnackbar("Customer added successfully!");
+        setTimeout(() => router.push("/dashboard/customers"), 1200);
       } catch (err: any) {
         setError(err?.message ?? "Failed to add customer");
       }
@@ -50,9 +52,13 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      {/* Header */}
-      <div className="card p-4">
+    <>
+      {snackbar && (
+        <Snackbar message={snackbar} onClose={() => setSnackbar(null)} />
+      )}
+      <form onSubmit={onSubmit} className="space-y-4">
+        {/* Header */}
+        <div className="card p-4">
         <h1 className="text-lg font-semibold text-brand-tertiary dark:text-white">
           Add Customer
         </h1>
@@ -62,15 +68,11 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
         </p>
       </div>
 
-      {/* Error / Success banners */}
+
+      {/* Error banner */}
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200">
-          {success}
         </div>
       )}
 
@@ -158,5 +160,6 @@ export default function AddCustomerForm({ role, salesmen }: Props) {
         {busy ? "Saving…" : "Add Customer"}
       </button>
     </form>
+    </>
   );
 }

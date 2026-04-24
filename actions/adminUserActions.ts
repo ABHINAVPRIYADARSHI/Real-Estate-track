@@ -5,11 +5,22 @@ import { prisma } from "@/lib/prisma";
 import type { Role, UserStatus } from "@prisma/client";
 
 async function requireActiveAdmin() {
-  const currentUser = await getAuthenticatedUser();
-  if (currentUser.status !== "Active" || currentUser.role !== "Admin") {
+  const authUser = await getAuthenticatedUser();
+
+  const admin = await prisma.user.findUnique({
+    where: { id: authUser.dbUserId },
+    select: { id: true, role: true, status: true },
+  });
+
+  if (
+    !admin ||
+    admin.status !== "Active" ||
+    admin.role !== "Admin"
+  ) {
     throw new Error("Admin access required");
   }
-  return currentUser;
+
+  return admin;
 }
 
 export async function approvePendingUserAction(input: {
@@ -86,6 +97,8 @@ export async function setUserStatusAction(input: {
   });
   if (!target) throw new Error("User not found");
 
+  // Support "Suspend/Disable instantly" (Active <-> Suspended).
+  // Approval/pending gating is handled by middleware.
   return prisma.user.update({
     where: { id: input.userId },
     data: {

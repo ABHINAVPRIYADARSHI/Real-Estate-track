@@ -23,27 +23,27 @@ export async function searchCustomersAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const currentUser = await getAuthenticatedUser();
-  if (currentUser.status !== "Active" || !currentUser.role) {
-    throw new Error("Not authorized");
-  }
+  const authUser = await getAuthenticatedUser();
+  const currentUser = { id: authUser.dbUserId, role: authUser.role, status: authUser.status };
+
+  if (!currentUser.role) throw new Error("Not authorized");
 
   const q = parsed.data.query;
-  const dbUserId = currentUser.dbUserId;
 
   const scopeWhere =
     currentUser.role === "Salesman"
-      ? { ownerUserId: dbUserId }
+      ? { ownerUserId: currentUser.id }
       : currentUser.role === "Manager"
         ? {
             owner: {
-              managerId: dbUserId,
+              managerId: currentUser.id,
               role: "Salesman",
               status: "Active",
             },
           }
         : {};
 
+  // mobile search tends to be exact-ish; name search is case-insensitive
   const customers = await prisma.customer.findMany({
     where: {
       ...(scopeWhere as any),
@@ -64,3 +64,4 @@ export async function searchCustomersAction(input: {
 
   return customers;
 }
+

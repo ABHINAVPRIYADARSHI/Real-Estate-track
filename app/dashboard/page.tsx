@@ -1,5 +1,6 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import FullCalendar from "@/components/calendar/FullCalendar";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -11,18 +12,27 @@ function formatPercent(n: number) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  let authUser: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  try {
+    authUser = await getAuthenticatedUser();
+  } catch {
+    redirect("/sign-in");
+  }
 
   const currentUser = await prisma.user.findUnique({
-    where: { authId: user.id },
-    select: { id: true, role: true, status: true, managerId: true, displayName: true },
+    where: { id: authUser!.dbUserId },
+    select: {
+      id: true,
+      role: true,
+      status: true,
+      managerId: true,
+      displayName: true,
+    },
   });
 
   if (!currentUser || currentUser.status !== "Active") {
     return (
-      <div className="card p-4 text-sm">
+      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
         Your account is not active. Please wait for Admin approval.
       </div>
     );
@@ -30,7 +40,7 @@ export default async function DashboardPage() {
 
   if (!currentUser.role) {
     return (
-      <div className="card p-4 text-sm">
+      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
         Your role has not been assigned yet. Please contact an Admin.
       </div>
     );
@@ -40,12 +50,48 @@ export default async function DashboardPage() {
     currentUser.role === "Salesman"
       ? { assignedSalesmanId: currentUser.id }
       : currentUser.role === "Manager"
-        ? { customer: { owner: { managerId: currentUser.id, role: "Salesman", status: "Active" } } }
+        ? {
+            customer: {
+              owner: {
+                managerId: currentUser.id,
+                role: "Salesman",
+                status: "Active",
+              },
+            },
+          }
         : {};
 
-  const [totalVisits, convertedVisits] = await Promise.all([
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const start = new Date(currentYear, currentMonth, 1);
+  const end = new Date(currentYear, currentMonth + 1, 1);
+
+  const [totalVisits, convertedVisits, agenda] = await Promise.all([
     prisma.visit.count({ where: visitsWhere as any }),
-    prisma.visit.count({ where: { ...(visitsWhere as any), status: "Converted" } }),
+    prisma.visit.count({
+      where: { ...(visitsWhere as any), status: "Converted" },
+    }),
+    prisma.visit.findMany({
+      orderBy: { dateTime: "asc" },
+      where: {
+        ...(visitsWhere as any),
+        dateTime: {
+          gte: start,
+          lt: end,
+        },
+      },
+      take: 100,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            mobileNumber: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const adminPendingData =
@@ -56,116 +102,100 @@ export default async function DashboardPage() {
             where: { status: "Pending" },
             orderBy: { createdAt: "asc" },
             take: 6,
-            select: { id: true, displayName: true, email: true },
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+            },
           }),
         ])
       : null;
 
   const pendingCount = adminPendingData?.[0] ?? 0;
   const pendingUsers = adminPendingData?.[1] ?? [];
-  const conversionRate = totalVisits > 0 ? convertedVisits / totalVisits : 0;
+
+  const conversionRate =
+    totalVisits > 0 ? convertedVisits / totalVisits : 0;
 
   return (
     <div className="space-y-4">
-      {/* Conversion rate card */}
-      <div className="card p-4">
-        <div className="text-sm text-brand-neutral">Conversion Rate</div>
-        <div className="mt-1 text-3xl font-bold text-brand-tertiary dark:text-white">
+      <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="text-sm text-neutral-600 dark:text-neutral-300">
+          Conversion Rate
+        </div>
+        <div className="mt-1 text-3xl font-semibold">
           {formatPercent(conversionRate)}
         </div>
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-neutral">
-          <span className="inline-flex items-center gap-1 rounded-full bg-brand-primary/15 px-2 py-0.5 font-medium text-brand-secondary dark:text-brand-primary">
-            {convertedVisits} converted
-          </span>
-          of {totalVisits} total visits
+        <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Converted {convertedVisits} / Total {totalVisits}
         </div>
       </div>
 
-      {/* Primary action buttons */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex gap-2">
         <Link
           href="/dashboard/add-customer"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-primary/30 bg-white px-3 py-4 text-center text-sm font-medium text-brand-tertiary transition-colors hover:border-brand-primary hover:bg-brand-primary/8 dark:bg-brand-tertiary dark:text-white dark:hover:bg-brand-primary/15"
+          className="btn-secondary flex-1 py-3 text-center text-sm"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <line x1="19" y1="8" x2="19" y2="14" />
-            <line x1="22" y1="11" x2="16" y2="11" />
-          </svg>
           Add Customer
         </Link>
         <Link
           href="/dashboard/visit-logger"
-          className="flex flex-col items-center gap-1.5 rounded-xl bg-brand-primary px-3 py-4 text-center text-sm font-medium text-white transition-colors hover:bg-brand-secondary"
+          className="btn-primary flex-1 py-3 text-center text-sm"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-          Log Visit
+          Schedule Visit
         </Link>
       </div>
 
-      {/* Navigation cards */}
-      <div className="grid grid-cols-2 gap-2">
-        <Link
-          href="/dashboard/customers"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-primary/30 bg-white px-3 py-4 text-center text-sm font-medium text-brand-tertiary transition-colors hover:border-brand-primary hover:bg-brand-primary/8 dark:bg-brand-tertiary dark:text-white dark:hover:bg-brand-primary/15"
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          Customers
-        </Link>
-        <Link
-          href="/dashboard/visits"
-          className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-primary/30 bg-white px-3 py-4 text-center text-sm font-medium text-brand-tertiary transition-colors hover:border-brand-primary hover:bg-brand-primary/8 dark:bg-brand-tertiary dark:text-white dark:hover:bg-brand-primary/15"
-        >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          Visits
-        </Link>
-      </div>
-
-      {/* Admin: pending approvals */}
       {currentUser.role === "Admin" ? (
-        <div className="card p-4">
+        <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm text-brand-neutral">Pending approvals</div>
-              <div className="mt-1 text-2xl font-bold text-brand-tertiary dark:text-white">
+              <div className="text-sm text-neutral-600 dark:text-neutral-300">
+                Pending approvals
+              </div>
+              <div className="mt-1 text-2xl font-semibold">
                 {pendingCount}
               </div>
             </div>
-            <Link href="/admin/user-management" className="btn-outline text-xs">
+            <Link
+              href="/admin/user-management"
+              className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-medium hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+            >
               Open approvals
             </Link>
           </div>
 
           <div className="mt-3 space-y-1.5 text-sm">
             {pendingUsers.length === 0 ? (
-              <div className="text-brand-neutral">No users are waiting for approval.</div>
+              <div className="text-neutral-500 dark:text-neutral-400">
+                No users are waiting for approval.
+              </div>
             ) : (
               pendingUsers.map((pendingUser) => (
                 <div
                   key={pendingUser.id}
-                  className="truncate rounded-md bg-brand-primary/8 px-2 py-1.5 text-brand-tertiary dark:bg-brand-primary/15 dark:text-white"
+                  className="truncate rounded-md bg-neutral-50 px-2 py-1.5 dark:bg-neutral-900"
                 >
-                  {pendingUser.displayName ?? pendingUser.email ?? "Unnamed user"}
+                  {pendingUser.displayName ?? pendingUser.email ?? pendingUser.id}
                 </div>
               ))
             )}
           </div>
         </div>
       ) : null}
+
+      <FullCalendar
+        initialVisits={agenda.map((v: any) => ({
+          id: v.id,
+          dateTime: v.dateTime.toISOString(),
+          status: v.status,
+          projectName: v.projectName,
+          customer: v.customer,
+        }))}
+        initialYear={currentYear}
+        initialMonth={currentMonth}
+      />
     </div>
   );
 }
+

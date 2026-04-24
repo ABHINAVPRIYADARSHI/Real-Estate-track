@@ -7,7 +7,7 @@ import { VisitStatus } from "@prisma/client";
 
 const AddVisitSchema = z.object({
   customerId: z.string().min(1),
-  projectId: z.string().min(1, "Please select a project"),
+  projectName: z.string().min(1).max(200),
   dateTime: z
     .string()
     .min(10, "Date/time is required")
@@ -18,7 +18,7 @@ const AddVisitSchema = z.object({
 
 export async function addVisitAction(input: {
   customerId: string;
-  projectId: string;
+  projectName: string;
   dateTime: string;
   status: VisitStatus;
   assignedSalesmanId?: string;
@@ -28,19 +28,14 @@ export async function addVisitAction(input: {
     throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
   }
 
-  const currentUser = await getAuthenticatedUser();
-  if (currentUser.status !== "Active" || !currentUser.role) {
-    throw new Error("Not authorized");
-  }
-
-  // Validate project exists and is active
-  const project = await prisma.project.findUnique({
-    where: { id: parsed.data.projectId },
-    select: { id: true, name: true, isActive: true },
+  const authUser = await getAuthenticatedUser();
+  const currentUser = await prisma.user.findUnique({
+    where: { id: authUser.dbUserId },
+    select: { id: true, role: true, status: true },
   });
 
-  if (!project || !project.isActive) {
-    throw new Error("Selected project is not available");
+  if (!currentUser || currentUser.status !== "Active" || !currentUser.role) {
+    throw new Error("Not authorized");
   }
 
   const customer = await prisma.customer.findUnique({
@@ -51,27 +46,27 @@ export async function addVisitAction(input: {
   if (!customer) throw new Error("Customer not found");
 
   const assignedDate = new Date(parsed.data.dateTime);
+
   const role = currentUser.role;
-  const dbUserId = currentUser.dbUserId;
 
   let assignedSalesmanId: string;
 
   if (role === "Salesman") {
-    if (customer.ownerUserId !== dbUserId) {
+    if (customer.ownerUserId !== currentUser.id) {
       throw new Error("You can only add visits for your owned leads");
     }
     if (!customer.owner || customer.owner.status !== "Active" || customer.owner.role !== "Salesman") {
       throw new Error("Lead owner is not active");
     }
-    assignedSalesmanId = dbUserId;
+    assignedSalesmanId = currentUser.id;
   } else if (role === "Manager") {
     if (
       !customer.owner ||
       customer.owner.role !== "Salesman" ||
       customer.owner.status !== "Active" ||
-      customer.owner.managerId !== dbUserId
+      customer.owner.managerId !== currentUser.id
     ) {
-      throw new Error("You can only add visits for your team's leads");
+      throw new Error("You can only add visits for your team’s leads");
     }
     if (!parsed.data.assignedSalesmanId) {
       throw new Error("Assigned salesman is required");
@@ -99,11 +94,11 @@ export async function addVisitAction(input: {
     throw new Error("Assigned salesman is not active");
   }
 
+  // Manager/Admin may delegate to any salesman; permissions on customer are enforced above.
   const visit = await prisma.visit.create({
     data: {
       customerId: customer.id,
-      projectId: project.id,
-      projectName: project.name,
+      projectName: parsed.data.projectName,
       dateTime: assignedDate,
       status: parsed.data.status,
       assignedSalesmanId,
@@ -112,3 +107,4 @@ export async function addVisitAction(input: {
 
   return { ok: true, visitId: visit.id };
 }
+

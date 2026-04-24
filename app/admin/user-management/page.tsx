@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import UserManagement from "@/components/admin/UserManagement";
 import { redirect } from "next/navigation";
@@ -6,12 +6,15 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function UserManagementPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  let authUser: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  try {
+    authUser = await getAuthenticatedUser();
+  } catch {
+    redirect("/sign-in");
+  }
 
   const admin = await prisma.user.findUnique({
-    where: { authId: user.id },
+    where: { id: authUser!.dbUserId },
     select: { id: true, role: true, status: true },
   });
 

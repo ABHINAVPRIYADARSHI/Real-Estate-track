@@ -60,7 +60,7 @@ export default async function VisitsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-brand-tertiary dark:text-white">Visits</h1>
         <Link href="/dashboard/visit-logger" className="btn-primary py-2">
-          + Log Visit
+          + Schedule Visit
         </Link>
       </div>
       <FullCalendar

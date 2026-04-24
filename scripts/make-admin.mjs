@@ -11,12 +11,15 @@ if (!env.DATABASE_URL) {
 
 process.env.DATABASE_URL = env.DATABASE_URL;
 
-const clerkUserId = process.argv[2];
+// authId is the Supabase user UUID (from auth.users).
+// You can get it from Supabase Dashboard > Authentication > Users.
+const authId = process.argv[2];
 const displayName = process.argv[3] ?? null;
 
-if (!clerkUserId) {
+if (!authId) {
   throw new Error(
-    "Usage: npm run make-admin -- <clerkUserId> [displayName]"
+    "Usage: npm run make-admin -- <supabaseAuthId> [displayName]\n" +
+    "  supabaseAuthId: The UUID from Supabase > Authentication > Users"
   );
 }
 
@@ -24,9 +27,9 @@ const prisma = new PrismaClient();
 
 try {
   const user = await prisma.user.upsert({
-    where: { clerkUserId },
+    where: { authId },
     create: {
-      clerkUserId,
+      authId,
       displayName,
       role: "Admin",
       status: "Active",
@@ -39,7 +42,7 @@ try {
     },
     select: {
       id: true,
-      clerkUserId: true,
+      authId: true,
       displayName: true,
       role: true,
       status: true,
